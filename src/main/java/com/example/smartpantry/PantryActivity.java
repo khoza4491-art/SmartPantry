@@ -3,32 +3,35 @@ package com.example.smartpantry;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import adapter.PantryAdapter;
 import database.DatabaseHelper;
 import model.PantryItem;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class PantryActivity extends AppCompatActivity
         implements PantryAdapter.OnPantryItemActionListener {
 
-    private RecyclerView recyclerPantry;
-
-    private Button btnAddIngredient;
-
+    private RecyclerView recyclerViewPantry;
+    private PantryAdapter pantryAdapter;
     private DatabaseHelper databaseHelper;
 
-    private PantryAdapter adapter;
+    private TextView txtEmptyPantry;
+    private Button btnAddIngredient;
 
     private List<PantryItem> pantryItems;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,101 +40,115 @@ public class PantryActivity extends AppCompatActivity
 
         setContentView(R.layout.activity_pantry);
 
-        recyclerPantry =
-                findViewById(R.id.recyclerPantry);
+        databaseHelper = new DatabaseHelper(this);
+
+        recyclerViewPantry =
+                findViewById(R.id.recyclerViewPantry);
+
+        txtEmptyPantry =
+                findViewById(R.id.txtEmptyPantry);
 
         btnAddIngredient =
                 findViewById(R.id.btnAddIngredient);
 
-        databaseHelper =
-                new DatabaseHelper(this);
 
-        pantryItems =
-                new ArrayList<>();
+        recyclerViewPantry.setLayoutManager(
+                new LinearLayoutManager(this)
+        );
 
-        adapter =
+
+        pantryItems = new ArrayList<>();
+
+        pantryAdapter =
                 new PantryAdapter(
                         pantryItems,
                         this
                 );
 
-        recyclerPantry.setLayoutManager(
-                new LinearLayoutManager(this)
+        recyclerViewPantry.setAdapter(
+                pantryAdapter
         );
 
-        recyclerPantry.setAdapter(adapter);
 
         btnAddIngredient.setOnClickListener(v -> {
 
-            Intent intent =
-                    new Intent(
-                            PantryActivity.this,
-                            AddEditPantryActivity.class
-                    );
+            Intent intent = new Intent(
+                    PantryActivity.this,
+                    AddEditPantryActivity.class
+            );
 
             startActivity(intent);
         });
 
+
         loadPantryItems();
     }
+
 
     @Override
     protected void onResume() {
 
         super.onResume();
 
-        if (databaseHelper != null) {
-
-            loadPantryItems();
-        }
+        loadPantryItems();
     }
+
 
     private void loadPantryItems() {
 
         List<PantryItem> items =
                 new ArrayList<>();
 
+
         Cursor cursor =
                 databaseHelper.getAllPantryItems();
 
+
         if (cursor != null) {
+
+            int idIndex =
+                    cursor.getColumnIndexOrThrow(
+                            DatabaseHelper.COL_PANTRY_ID
+                    );
+
+            int nameIndex =
+                    cursor.getColumnIndexOrThrow(
+                            DatabaseHelper.COL_PANTRY_NAME
+                    );
+
+            int quantityIndex =
+                    cursor.getColumnIndexOrThrow(
+                            DatabaseHelper.COL_PANTRY_QUANTITY
+                    );
+
+            int unitIndex =
+                    cursor.getColumnIndexOrThrow(
+                            DatabaseHelper.COL_PANTRY_UNIT
+                    );
+
+            int expiryIndex =
+                    cursor.getColumnIndexOrThrow(
+                            DatabaseHelper.COL_PANTRY_EXPIRY
+                    );
+
 
             while (cursor.moveToNext()) {
 
                 int id =
-                        cursor.getInt(
-                                cursor.getColumnIndexOrThrow(
-                                        DatabaseHelper.COL_PANTRY_ID
-                                )
-                        );
+                        cursor.getInt(idIndex);
 
                 String name =
-                        cursor.getString(
-                                cursor.getColumnIndexOrThrow(
-                                        DatabaseHelper.COL_PANTRY_NAME
-                                )
-                        );
+                        cursor.getString(nameIndex);
 
                 double quantity =
-                        cursor.getDouble(
-                                cursor.getColumnIndexOrThrow(
-                                        DatabaseHelper.COL_PANTRY_QUANTITY
-                                )
-                        );
+                        cursor.getDouble(quantityIndex);
 
                 String unit =
-                        cursor.getString(
-                                cursor.getColumnIndexOrThrow(
-                                        DatabaseHelper.COL_PANTRY_UNIT
-                                )
-                        );
+                        cursor.getString(unitIndex);
 
                 String expiryDate =
-                        cursor.getString(
-                                cursor.getColumnIndexOrThrow(
-                                        DatabaseHelper.COL_PANTRY_EXPIRY
-                                )
-                        );
+                        cursor.getString(expiryIndex);
+
 
                 PantryItem item =
                         new PantryItem(
@@ -142,14 +159,51 @@ public class PantryActivity extends AppCompatActivity
                                 expiryDate
                         );
 
+
                 items.add(item);
             }
+
 
             cursor.close();
         }
 
-        adapter.updateItems(items);
+
+        pantryItems = items;
+
+
+        pantryAdapter.updateItems(
+                pantryItems
+        );
+
+
+        updateEmptyState();
     }
+
+
+    private void updateEmptyState() {
+
+        if (pantryItems.isEmpty()) {
+
+            txtEmptyPantry.setVisibility(
+                    View.VISIBLE
+            );
+
+            recyclerViewPantry.setVisibility(
+                    View.GONE
+            );
+
+        } else {
+
+            txtEmptyPantry.setVisibility(
+                    View.GONE
+            );
+
+            recyclerViewPantry.setVisibility(
+                    View.VISIBLE
+            );
+        }
+    }
+
 
     @Override
     public void onEdit(PantryItem item) {
@@ -160,40 +214,55 @@ public class PantryActivity extends AppCompatActivity
                         AddEditPantryActivity.class
                 );
 
-        intent.putExtra("item_id", item.getId());
-        intent.putExtra("item_name", item.getName());
-        intent.putExtra("item_quantity", item.getQuantity());
-        intent.putExtra("item_unit", item.getUnit());
-        intent.putExtra("item_expiry", item.getExpiryDate());
+
+        intent.putExtra(
+                "itemId",
+                item.getId()
+        );
+
 
         startActivity(intent);
     }
 
+
     @Override
     public void onDelete(PantryItem item) {
 
-        int result =
-                databaseHelper.deletePantryItem(
-                        item.getId()
-                );
+        new AlertDialog.Builder(this)
 
-        if (result > 0) {
+                .setTitle("Delete Ingredient")
 
-            Toast.makeText(
-                    this,
-                    "Ingredient deleted",
-                    Toast.LENGTH_SHORT
-            ).show();
+                .setMessage(
+                        "Are you sure you want to delete "
+                                + item.getName()
+                                + "?"
+                )
 
-            loadPantryItems();
+                .setPositiveButton(
+                        "Delete",
+                        (dialog, which) -> {
 
-        } else {
+                            databaseHelper.deletePantryItem(
+                                    item.getId()
+                            );
 
-            Toast.makeText(
-                    this,
-                    "Unable to delete ingredient",
-                    Toast.LENGTH_SHORT
-            ).show();
-        }
+
+                            Toast.makeText(
+                                    PantryActivity.this,
+                                    "Ingredient deleted",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+
+
+                            loadPantryItems();
+                        }
+                )
+
+                .setNegativeButton(
+                        "Cancel",
+                        null
+                )
+
+                .show();
     }
 }
