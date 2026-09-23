@@ -1,157 +1,288 @@
 package logic;
 
+import java.util.List;
+import java.util.Locale;
 
 import model.PantryItem;
 import model.Recipe;
 import model.RecipeIngredient;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
 public class RecipeMatcher {
 
+    /*
+     * Strict recipe matching.
+     *
+     * A recipe qualifies ONLY when every required
+     * ingredient is present in the pantry with
+     * sufficient quantity and a compatible unit.
+     */
     public static boolean canMakeRecipe(
             Recipe recipe,
             List<RecipeIngredient> requiredIngredients,
             List<PantryItem> pantryItems) {
 
-        Map<String, PantryItem> pantryMap =
-                new HashMap<>();
-
-        for (PantryItem pantryItem : pantryItems) {
-
-            String normalizedName =
-                    normalizeIngredientName(
-                            pantryItem.getName()
-                    );
-
-            pantryMap.put(
-                    normalizedName,
-                    pantryItem
-            );
+        if (recipe == null) {
+            return false;
         }
 
-        // EVERY required ingredient must pass.
-        for (RecipeIngredient required :
-                requiredIngredients) {
+        if (requiredIngredients == null
+                || requiredIngredients.isEmpty()) {
 
-            String requiredName =
-                    normalizeIngredientName(
-                            required.getName()
-                    );
+            return false;
+        }
 
-            PantryItem pantryItem =
-                    pantryMap.get(requiredName);
+        if (pantryItems == null
+                || pantryItems.isEmpty()) {
 
-            // Ingredient completely missing.
-            if (pantryItem == null) {
-                return false;
+            return false;
+        }
+
+
+        /*
+         * Check EVERY ingredient required by
+         * the recipe.
+         */
+        for (RecipeIngredient requiredIngredient
+                : requiredIngredients) {
+
+            boolean ingredientFound = false;
+
+
+            /*
+             * Search the user's pantry for a
+             * matching ingredient.
+             */
+            for (PantryItem pantryItem : pantryItems) {
+
+                if (pantryItem == null) {
+                    continue;
+                }
+
+
+                boolean nameMatches =
+                        namesMatch(
+                                pantryItem.getName(),
+                                requiredIngredient.getName()
+                        );
+
+
+                boolean unitMatches =
+                        unitsMatch(
+                                pantryItem.getUnit(),
+                                requiredIngredient.getUnit()
+                        );
+
+
+                boolean quantityMatches =
+                        pantryItem.getQuantity()
+                                >= requiredIngredient
+                                .getRequiredQuantity();
+
+
+                /*
+                 * The ingredient only qualifies when
+                 * name, unit and quantity all match.
+                 */
+                if (nameMatches
+                        && unitMatches
+                        && quantityMatches) {
+
+                    ingredientFound = true;
+
+                    break;
+                }
             }
 
-            // Quantity is insufficient.
-            if (pantryItem.getQuantity()
-                    < required.getRequiredQuantity()) {
 
-                return false;
-            }
-
-            // Unit compatibility.
-            if (!unitsCompatible(
-                    pantryItem.getUnit(),
-                    required.getUnit())) {
+            /*
+             * If even ONE required ingredient is
+             * missing or insufficient, the entire
+             * recipe is rejected.
+             */
+            if (!ingredientFound) {
 
                 return false;
             }
         }
 
-        // Only reaches here if EVERY
-        // required ingredient passed.
+
+        /*
+         * Every required ingredient passed.
+         */
         return true;
     }
 
-    private static String normalizeIngredientName(
+
+    /*
+     * Handles simple singular/plural differences.
+     *
+     * Examples:
+     * tomato -> tomatoes
+     * egg -> eggs
+     * potato -> potatoes
+     */
+    private static boolean namesMatch(
+            String pantryName,
+            String requiredName) {
+
+        if (pantryName == null
+                || requiredName == null) {
+
+            return false;
+        }
+
+
+        String pantry =
+                normaliseIngredientName(
+                        pantryName
+                );
+
+        String required =
+                normaliseIngredientName(
+                        requiredName
+                );
+
+
+        return pantry.equals(required);
+    }
+
+
+    private static String normaliseIngredientName(
             String name) {
 
-        String normalized =
-                name.trim().toLowerCase();
+        String value =
+                name.trim()
+                        .toLowerCase(Locale.ROOT);
 
-        // Basic singular/plural handling.
-        if (normalized.endsWith("ies")) {
 
-            normalized =
-                    normalized.substring(
+        /*
+         * Remove duplicate spaces.
+         */
+        value =
+                value.replaceAll(
+                        "\\s+",
+                        " "
+                );
+
+
+        /*
+         * Basic plural handling.
+         */
+        if (value.endsWith("ies")
+                && value.length() > 3) {
+
+            value =
+                    value.substring(
                             0,
-                            normalized.length() - 3
+                            value.length() - 3
                     ) + "y";
 
-        } else if (normalized.endsWith("oes")) {
+        } else if (value.endsWith("oes")
+                && value.length() > 3) {
 
-            normalized =
-                    normalized.substring(
+            value =
+                    value.substring(
                             0,
-                            normalized.length() - 2
+                            value.length() - 2
                     );
 
-        } else if (normalized.endsWith("s")
-                && !normalized.endsWith("ss")) {
+        } else if (value.endsWith("es")
+                && value.length() > 2) {
 
-            normalized =
-                    normalized.substring(
+            value =
+                    value.substring(
                             0,
-                            normalized.length() - 1
+                            value.length() - 2
+                    );
+
+        } else if (value.endsWith("s")
+                && value.length() > 1) {
+
+            value =
+                    value.substring(
+                            0,
+                            value.length() - 1
                     );
         }
 
-        return normalized;
+
+        return value;
     }
 
-    private static boolean unitsCompatible(
+
+    /*
+     * Handles common unit differences.
+     *
+     * grams / gram -> g
+     * millilitres / millilitre -> ml
+     * units -> unit
+     * cloves -> clove
+     * slices -> slice
+     */
+    private static boolean unitsMatch(
             String pantryUnit,
             String requiredUnit) {
 
+        if (pantryUnit == null
+                || requiredUnit == null) {
+
+            return false;
+        }
+
+
         String pantry =
-                pantryUnit.trim().toLowerCase();
+                normaliseUnit(pantryUnit);
 
         String required =
-                requiredUnit.trim().toLowerCase();
+                normaliseUnit(requiredUnit);
 
-        if (pantry.equals(required)) {
-            return true;
+
+        return pantry.equals(required);
+    }
+
+
+    private static String normaliseUnit(
+            String unit) {
+
+        String value =
+                unit.trim()
+                        .toLowerCase(Locale.ROOT);
+
+
+        if (value.equals("gram")
+                || value.equals("grams")) {
+
+            return "g";
         }
 
-        // Basic equivalent units.
-        if ((pantry.equals("unit")
-                || pantry.equals("units"))
-                &&
-                (required.equals("unit")
-                        || required.equals("units"))) {
 
-            return true;
+        if (value.equals("millilitre")
+                || value.equals("millilitres")
+                || value.equals("milliliter")
+                || value.equals("milliliters")) {
+
+            return "ml";
         }
 
-        if ((pantry.equals("g")
-                || pantry.equals("gram")
-                || pantry.equals("grams"))
-                &&
-                (required.equals("g")
-                        || required.equals("gram")
-                        || required.equals("grams"))) {
 
-            return true;
+        if (value.equals("units")) {
+
+            return "unit";
         }
 
-        if ((pantry.equals("ml")
-                || pantry.equals("millilitre")
-                || pantry.equals("millilitres"))
-                &&
-                (required.equals("ml")
-                        || required.equals("millilitre")
-                        || required.equals("millilitres"))) {
 
-            return true;
+        if (value.equals("cloves")) {
+
+            return "clove";
         }
 
-        return false;
+
+        if (value.equals("slices")) {
+
+            return "slice";
+        }
+
+
+        return value;
     }
 }
