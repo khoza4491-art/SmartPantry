@@ -65,38 +65,81 @@ public class AddEditPantryActivity extends AppCompatActivity {
 
     private void loadExistingItem() {
 
-        IntentData();
-    }
+        Intent intent = getIntent();
 
-    private void IntentData() {
-
-        if (getIntent().hasExtra("item_id")) {
+        /*
+         * PantryActivity sends the existing item's ID
+         * using the key "itemId".
+         */
+        if (intent.hasExtra("itemId")) {
 
             itemId =
-                    getIntent().getIntExtra(
-                            "item_id",
+                    intent.getIntExtra(
+                            "itemId",
                             -1
                     );
 
+            loadItemFromDatabase();
+
+        } else {
+
+            txtFormTitle.setText(
+                    "Add Ingredient"
+            );
+
+            btnSaveIngredient.setText(
+                    "Add Ingredient"
+            );
+        }
+    }
+
+    private void loadItemFromDatabase() {
+
+        /*
+         * Read the existing pantry item from SQLite
+         * using its ID.
+         */
+        android.database.Cursor cursor =
+                databaseHelper.getReadableDatabase().query(
+                        DatabaseHelper.TABLE_PANTRY,
+                        null,
+                        DatabaseHelper.COL_PANTRY_ID + "=?",
+                        new String[]{
+                                String.valueOf(itemId)
+                        },
+                        null,
+                        null,
+                        null
+                );
+
+        if (cursor != null && cursor.moveToFirst()) {
+
             String name =
-                    getIntent().getStringExtra(
-                            "item_name"
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(
+                                    DatabaseHelper.COL_PANTRY_NAME
+                            )
                     );
 
             double quantity =
-                    getIntent().getDoubleExtra(
-                            "item_quantity",
-                            0
+                    cursor.getDouble(
+                            cursor.getColumnIndexOrThrow(
+                                    DatabaseHelper.COL_PANTRY_QUANTITY
+                            )
                     );
 
             String unit =
-                    getIntent().getStringExtra(
-                            "item_unit"
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(
+                                    DatabaseHelper.COL_PANTRY_UNIT
+                            )
                     );
 
             String expiry =
-                    getIntent().getStringExtra(
-                            "item_expiry"
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(
+                                    DatabaseHelper.COL_PANTRY_EXPIRY
+                            )
                     );
 
             txtFormTitle.setText(
@@ -114,11 +157,29 @@ public class AddEditPantryActivity extends AppCompatActivity {
             if (expiry != null) {
 
                 editExpiry.setText(expiry);
+
+            } else {
+
+                editExpiry.setText("");
             }
 
             btnSaveIngredient.setText(
                     "Update Ingredient"
             );
+
+        } else {
+
+            Toast.makeText(
+                    this,
+                    "Ingredient not found",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+        }
+
+        if (cursor != null) {
+            cursor.close();
         }
     }
 
@@ -148,7 +209,7 @@ public class AddEditPantryActivity extends AppCompatActivity {
                         .toString()
                         .trim();
 
-        // Validation
+        // Validate ingredient name
         if (name.isEmpty()) {
 
             editIngredientName.setError(
@@ -160,6 +221,7 @@ public class AddEditPantryActivity extends AppCompatActivity {
             return;
         }
 
+        // Validate quantity
         if (quantityText.isEmpty()) {
 
             editQuantity.setError(
@@ -171,6 +233,7 @@ public class AddEditPantryActivity extends AppCompatActivity {
             return;
         }
 
+        // Validate unit
         if (unit.isEmpty()) {
 
             editUnit.setError(
@@ -202,6 +265,7 @@ public class AddEditPantryActivity extends AppCompatActivity {
             return;
         }
 
+        // Quantity must be positive
         if (quantity <= 0) {
 
             editQuantity.setError(
@@ -213,6 +277,9 @@ public class AddEditPantryActivity extends AppCompatActivity {
             return;
         }
 
+        /*
+         * itemId == -1 means this is a NEW pantry item.
+         */
         if (itemId == -1) {
 
             long result =
@@ -244,6 +311,10 @@ public class AddEditPantryActivity extends AppCompatActivity {
 
         } else {
 
+            /*
+             * Existing item: UPDATE the database record
+             * instead of creating a new one.
+             */
             int result =
                     databaseHelper.updatePantryItem(
                             itemId,
