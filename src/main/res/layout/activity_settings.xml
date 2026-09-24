@@ -2,66 +2,191 @@
 
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="20dp">
 
+        <!-- Page Title -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Settings"
-            android:textSize="30sp"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginBottom="30dp" />
+            android:layout_marginBottom="24dp" />
+
+        <!-- Profile Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Profile"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/editTextName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Your Name"
+            android:inputType="textPersonName"
+            android:minHeight="48dp"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/editTextEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email Address"
+            android:inputType="textEmailAddress"
+            android:minHeight="48dp"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Notifications Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notifications"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Expiry Alerts Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Expiry Alerts"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switchExpiryAlerts"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp" />
+
+        </LinearLayout>
+
+        <!-- Recipe Notifications Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="8dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Recipe Notifications"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switchRecipeNotifications"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp" />
+
+        </LinearLayout>
+
+        <!-- App Preferences -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="App Preferences"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Dark Mode"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switchDarkMode"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="48dp"
+                android:minHeight="48dp" />
+
+        </LinearLayout>
+
+        <!-- About Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="About"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp" />
 
         <TextView
+            android:id="@+id/textAppName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Smart Pantry Manager"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Manage your pantry and reduce food waste by using ingredients you already have."
             android:textSize="16sp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp" />
-
-        <Switch
-            android:id="@+id/switchExpiryAlerts"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Expiring-soon alerts"
-            android:textSize="18sp" />
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
 
         <TextView
+            android:id="@+id/textAppVersion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Enable this option to receive reminders about ingredients approaching their expiry date."
+            android:text="Version 1.0"
             android:textSize="14sp"
-            android:layout_marginTop="6dp"
             android:layout_marginBottom="24dp" />
 
-        <TextView
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/btnSaveSettings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Database"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SQLite local database"
+            android:minHeight="48dp"
+            android:text="Save Settings"
             android:textSize="16sp"
-            android:layout_marginTop="6dp" />
+            android:layout_marginBottom="12dp" />
+
+        <!-- Back Button -->
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="Back"
+            android:textSize="16sp" />
 
     </LinearLayout>
 
